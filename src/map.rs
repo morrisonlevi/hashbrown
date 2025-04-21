@@ -6580,7 +6580,15 @@ mod test_map_with_mmap_allocations {
             }
 
             match NonNull::new(addr.cast()) {
-                Some(addr) => Ok(NonNull::slice_from_raw_parts(addr, len)),
+                Some(data) => {
+                    // SAFETY: this is NonNull::slice_from_raw_parts.
+                    Ok(unsafe {
+                        NonNull::new_unchecked(core::ptr::slice_from_raw_parts_mut(
+                            data.as_ptr(),
+                            len,
+                        ))
+                    })
+                }
 
                 // This branch shouldn't be taken in practice, but since we
                 // cannot return null as a valid pointer in our type system,

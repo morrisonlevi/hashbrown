@@ -72,7 +72,15 @@ mod inner {
         #[inline]
         fn allocate(&self, layout: Layout) -> Result<NonNull<[u8]>, ()> {
             match unsafe { NonNull::new(alloc(layout)) } {
-                Some(ptr) => Ok(NonNull::slice_from_raw_parts(ptr, layout.size())),
+                Some(data) => {
+                    // SAFETY: this is NonNull::slice_from_raw_parts.
+                    Ok(unsafe {
+                        NonNull::new_unchecked(core::ptr::slice_from_raw_parts_mut(
+                            data.as_ptr(),
+                            layout.size(),
+                        ))
+                    })
+                }
                 None => Err(()),
             }
         }
