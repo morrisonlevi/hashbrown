@@ -6515,13 +6515,18 @@ mod test_map {
     }
 }
 
-#[cfg(all(test, unix))]
+#[cfg(all(test, unix, any(feature = "nightly", feature = "allocator-api2")))]
 mod test_map_with_mmap_allocations {
     use super::HashMap;
     use crate::raw::prev_pow2;
-    use allocator_api2::alloc::{AllocError, Allocator};
     use core::alloc::Layout;
     use core::ptr::{null_mut, NonNull};
+
+    #[cfg(feature = "nightly")]
+    use core::alloc::{AllocError, Allocator};
+
+    #[cfg(all(feature = "allocator-api2", not(feature = "nightly")))]
+    use allocator_api2::alloc::{AllocError, Allocator};
 
     /// This is not a production quality allocator, just good enough for
     /// some basic tests.
