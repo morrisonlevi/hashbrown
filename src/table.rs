@@ -415,6 +415,44 @@ where
         }
     }
 
+    /// Inserts an element into the `HashTable` with the given hash value, but
+    /// without checking whether an equivalent element already exists within
+    /// the table. If there is insufficient capacity, then this returns None.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # #[cfg(feature = "nightly")]
+    /// # fn test() {
+    /// use hashbrown::{HashTable, DefaultHashBuilder};
+    /// use std::hash::BuildHasher;
+    ///
+    /// let mut v = HashTable::new();
+    /// let hasher = DefaultHashBuilder::default();
+    /// let hasher = |val: &_| hasher.hash_one(val);
+    /// assert!(v.insert_unique_within_capacity(hasher(&1), 1).is_none());
+    /// v.reserve(1, hasher);
+    /// v.insert_unique_within_capacity(hasher(&1), 1);
+    /// assert!(!v.is_empty());
+    /// # }
+    /// # fn main() {
+    /// #     #[cfg(feature = "nightly")]
+    /// #     test()
+    /// # }
+    /// ```
+    pub fn insert_unique_within_capacity(
+        &mut self,
+        hash: u64,
+        value: T,
+    ) -> Option<OccupiedEntry<'_, T, A>> {
+        let bucket = self.raw.insert_within_capacity(hash, value)?;
+        Some(OccupiedEntry {
+            hash,
+            bucket,
+            table: self,
+        })
+    }
+
     /// Clears the table, removing all values.
     ///
     /// # Examples
