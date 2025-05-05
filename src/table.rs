@@ -417,7 +417,8 @@ where
 
     /// Inserts an element into the `HashTable` with the given hash value, but
     /// without checking whether an equivalent element already exists within
-    /// the table. If there is insufficient capacity, then this returns None.
+    /// the table. If there is insufficient capacity, then this returns an
+    /// error holding the provided value.
     ///
     /// # Examples
     ///
@@ -430,9 +431,10 @@ where
     /// let mut v = HashTable::new();
     /// let hasher = DefaultHashBuilder::default();
     /// let hasher = |val: &_| hasher.hash_one(val);
-    /// assert!(v.insert_unique_within_capacity(hasher(&1), 1).is_none());
+    /// assert!(v.insert_unique_within_capacity(hasher(&1), 1).is_err());
+    /// assert!(v.is_empty());
     /// v.reserve(1, hasher);
-    /// v.insert_unique_within_capacity(hasher(&1), 1);
+    /// assert!(v.insert_unique_within_capacity(hasher(&1), 1).is_ok());
     /// assert!(!v.is_empty());
     /// # }
     /// # fn main() {
@@ -444,13 +446,15 @@ where
         &mut self,
         hash: u64,
         value: T,
-    ) -> Option<OccupiedEntry<'_, T, A>> {
-        let bucket = self.raw.insert_within_capacity(hash, value)?;
-        Some(OccupiedEntry {
-            hash,
-            bucket,
-            table: self,
-        })
+    ) -> Result<OccupiedEntry<'_, T, A>, T> {
+        match self.raw.insert_within_capacity(hash, value) {
+            Ok(bucket) => Ok(OccupiedEntry {
+                hash,
+                bucket,
+                table: self,
+            }),
+            Err(err) => Err(err),
+        }
     }
 
     /// Clears the table, removing all values.

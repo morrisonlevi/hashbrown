@@ -1092,10 +1092,12 @@ impl<T, A: Allocator> RawTable<T, A> {
     ///
     /// This does not check if the given element already exists in the table.
     #[inline]
-    pub(crate) fn insert_within_capacity(&mut self, hash: u64, value: T) -> Option<Bucket<T>> {
-        let slot = self.find_insert_slot(hash)?;
-        // SAFETY: todo
-        Some(unsafe { self.insert_in_slot(hash, slot, value) })
+    pub(crate) fn insert_within_capacity(&mut self, hash: u64, value: T) -> Result<Bucket<T>, T> {
+        match self.find_insert_slot(hash) {
+            // SAFETY: todo
+            Some(slot) => Ok(unsafe { self.insert_in_slot(hash, slot, value) }),
+            None => Err(value),
+        }
     }
 
     /// Inserts a new element into the table, and returns a mutable reference to it.
