@@ -431,10 +431,10 @@ where
     /// let mut v = HashTable::new();
     /// let hasher = DefaultHashBuilder::default();
     /// let hasher = |val: &_| hasher.hash_one(val);
-    /// assert!(v.insert_unique_within_capacity(hasher(&1), 1).is_err());
+    /// assert!(v.try_insert_unique_within_capacity(hasher(&1), 1).is_err());
     /// assert!(v.is_empty());
     /// v.reserve(1, hasher);
-    /// assert!(v.insert_unique_within_capacity(hasher(&1), 1).is_ok());
+    /// assert!(v.try_insert_unique_within_capacity(hasher(&1), 1).is_ok());
     /// assert!(!v.is_empty());
     /// # }
     /// # fn main() {
@@ -442,12 +442,12 @@ where
     /// #     test()
     /// # }
     /// ```
-    pub fn insert_unique_within_capacity(
+    pub fn try_insert_unique_within_capacity(
         &mut self,
         hash: u64,
         value: T,
     ) -> Result<OccupiedEntry<'_, T, A>, T> {
-        match self.raw.insert_within_capacity(hash, value) {
+        match self.raw.try_insert_within_capacity(hash, value) {
             Ok(bucket) => Ok(OccupiedEntry {
                 hash,
                 bucket,

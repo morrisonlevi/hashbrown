@@ -1087,12 +1087,17 @@ impl<T, A: Allocator> RawTable<T, A> {
         unsafe { self.insert_in_slot(hash, slot, value) }
     }
 
-    /// Inserts a new element into the table if there is capacity, and returns
-    /// its raw bucket.
+    /// Tries to insert a new element into the table if there is capacity.
+    /// Returns its raw bucket if successful, and otherwise returns `value`
+    /// to the caller on error.
     ///
     /// This does not check if the given element already exists in the table.
     #[inline]
-    pub(crate) fn insert_within_capacity(&mut self, hash: u64, value: T) -> Result<Bucket<T>, T> {
+    pub(crate) fn try_insert_within_capacity(
+        &mut self,
+        hash: u64,
+        value: T,
+    ) -> Result<Bucket<T>, T> {
         match self.find_insert_slot(hash) {
             // SAFETY: todo
             Some(slot) => Ok(unsafe { self.insert_in_slot(hash, slot, value) }),
