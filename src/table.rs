@@ -186,6 +186,20 @@ where
         }
     }
 
+    /// Attempts to create an empty `HashTable` with the specified capacity
+    /// using the given allocator.
+    ///
+    /// Returns `Err` if memory allocation fails or the capacity overflows.
+    /// This is the fallible, panic-free equivalent of [`with_capacity_in`].
+    ///
+    /// [`with_capacity_in`]: HashTable::with_capacity_in
+    #[cfg_attr(feature = "inline-more", inline)]
+    pub fn try_with_capacity_in(capacity: usize, alloc: A) -> Result<Self, TryReserveError> {
+        Ok(Self {
+            raw: RawTable::try_with_capacity_in(capacity, alloc)?,
+        })
+    }
+
     /// Returns a reference to the underlying allocator.
     pub fn allocator(&self) -> &A {
         self.raw.allocator()
@@ -412,6 +426,48 @@ where
             hash,
             bucket,
             table: self,
+        }
+    }
+
+    /// Inserts an element into the `HashTable` with the given hash value, but
+    /// without checking whether an equivalent element already exists within
+    /// the table. If there is insufficient capacity, then this returns an
+    /// error holding the provided value.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # #[cfg(feature = "nightly")]
+    /// # fn test() {
+    /// use hashbrown::{HashTable, DefaultHashBuilder};
+    /// use std::hash::BuildHasher;
+    ///
+    /// let mut v = HashTable::new();
+    /// let hasher = DefaultHashBuilder::default();
+    /// let hasher = |val: &_| hasher.hash_one(val);
+    /// assert!(v.try_insert_unique_within_capacity(hasher(&1), 1).is_err());
+    /// assert!(v.is_empty());
+    /// v.reserve(1, hasher);
+    /// assert!(v.try_insert_unique_within_capacity(hasher(&1), 1).is_ok());
+    /// assert!(!v.is_empty());
+    /// # }
+    /// # fn main() {
+    /// #     #[cfg(feature = "nightly")]
+    /// #     test()
+    /// # }
+    /// ```
+    pub fn try_insert_unique_within_capacity(
+        &mut self,
+        hash: u64,
+        value: T,
+    ) -> Result<OccupiedEntry<'_, T, A>, T> {
+        match self.raw.try_insert_within_capacity(hash, value) {
+            Ok(bucket) => Ok(OccupiedEntry {
+                hash,
+                bucket,
+                table: self,
+            }),
+            Err(value) => Err(value),
         }
     }
 
