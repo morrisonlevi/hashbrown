@@ -652,6 +652,25 @@ impl<T, A: Allocator> RawTable<T, A> {
         }
     }
 
+    /// Attempts to allocate a new hash table using the given allocator, with
+    /// at least enough capacity for inserting the given number of elements
+    /// without reallocating.
+    ///
+    /// Returns `Err` if memory allocation fails or the capacity overflows.
+    #[cfg_attr(feature = "inline-more", inline)]
+    pub(crate) fn try_with_capacity_in(capacity: usize, alloc: A) -> Result<Self, TryReserveError> {
+        Ok(Self {
+            table: RawTableInner::fallible_with_capacity(
+                &alloc,
+                Self::TABLE_LAYOUT,
+                capacity,
+                Fallibility::Fallible,
+            )?,
+            alloc,
+            marker: PhantomData,
+        })
+    }
+
     /// Returns a reference to the underlying allocator.
     #[inline]
     pub(crate) fn allocator(&self) -> &A {
@@ -2679,6 +2698,7 @@ impl RawTableInner {
     }
 
     /// Gets the slice of all control bytes.
+    #[cfg_attr(feature = "inline-more", inline)]
     fn ctrl_slice(&mut self) -> &mut [Tag] {
         // SAFETY: We've initialized all control bytes, and have the correct number.
         unsafe { slice::from_raw_parts_mut(self.ctrl.as_ptr().cast(), self.num_ctrl_bytes()) }

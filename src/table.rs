@@ -187,6 +187,20 @@ where
         }
     }
 
+    /// Attempts to create an empty `HashTable` with the specified capacity
+    /// using the given allocator.
+    ///
+    /// Returns `Err` if memory allocation fails or the capacity overflows.
+    /// This is the fallible, panic-free equivalent of [`with_capacity_in`].
+    ///
+    /// [`with_capacity_in`]: HashTable::with_capacity_in
+    #[cfg_attr(feature = "inline-more", inline)]
+    pub fn try_with_capacity_in(capacity: usize, alloc: A) -> Result<Self, TryReserveError> {
+        Ok(Self {
+            raw: RawTable::try_with_capacity_in(capacity, alloc)?,
+        })
+    }
+
     /// Returns a reference to the underlying allocator.
     pub fn allocator(&self) -> &A {
         self.raw.allocator()
